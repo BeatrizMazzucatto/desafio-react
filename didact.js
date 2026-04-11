@@ -232,3 +232,53 @@ updateApp("Missão 3: Árvore de Fibras funcionando! 🌳", "Aguarde 2 segundos 
 setTimeout(() => {
   updateApp("Missão 3: Reconciliação funcionando! 🔄", "O DOM foi atualizado sem recriar a div container.")
 }, 2000)
+
+// ---- Missão 4: createElement ----
+function commitRoot() {
+  commitWork(wipRoot.child)
+  wipRoot = null
+}
+
+function commitWork(fiber) {
+  if (!fiber) return
+
+  let domParentFiber = fiber.parent
+  while (!domParentFiber.dom) {
+    domParentFiber = domParentFiber.parent
+  }
+
+  const domParent = domParentFiber.dom
+
+  if (fiber.dom != null) {
+    domParent.appendChild(fiber.dom)
+  }
+
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
+}
+
+function reconcileChildren(wipFiber, elements) {
+  let index = 0
+  let prevSibling = null
+
+  while (index < elements.length) {
+    const element = elements[index]
+
+    const newFiber = {
+      type: element.type,
+      props: element.props,
+      parent: wipFiber,
+      dom: null,
+    }
+
+    if (index === 0) {
+      wipFiber.child = newFiber
+    } else {
+      prevSibling.sibling = newFiber
+    }
+
+    prevSibling = newFiber
+    index++
+  }
+}
+
