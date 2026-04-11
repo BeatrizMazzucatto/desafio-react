@@ -1,7 +1,10 @@
 // ============================================================
-// DIDACT — Missão 1: createElement e render
+// DIDACT — Missão 2: Modo Concorrente e Árvore de Fibras
 // ============================================================
 
+// ---- Missão 1: createElement (sem alterações) ----
+
+// Transforma JSX em um objeto simples representando um elemento de UI.
 function createElement(type, props, ...children) {
   return {
     type,
@@ -16,43 +19,127 @@ function createElement(type, props, ...children) {
   }
 }
 
+// Cria um nó virtual para conteúdo de texto puro.
 function createTextElement(text) {
   return {
     type: "TEXT_ELEMENT",
     props: {
-      nodeValue: text,    
-      children: [],       
+      nodeValue: text,
+      children: [],
     },
   }
 }
 
-function render(element, container) {
-  const dom =
-    element.type === "TEXT_ELEMENT"
-      ? document.createTextNode("")
-      : document.createElement(element.type)
+// ---- Missão 2: Funções auxiliares de fibra ----
 
-  Object.keys(element.props)
-    .filter(key => key !== "children")
-    .forEach(name => {
-      dom[name] = element.props[name]
-    })
-
-  element.props.children.forEach(child => render(child, dom))
-
-  container.appendChild(dom)
+function updateDom(dom, prevProps, nextProps) {
+  Object.keys(nextProps)
+    .filter(k => k !== "children")
+    .forEach(k => { dom[k] = nextProps[k] })
 }
 
-// ---- API pública ----
-const Didact = { createElement, render }
+function createDom(fiber) {
+  const dom =
+    fiber.type === "TEXT_ELEMENT"
+      ? document.createTextNode("")
+      : document.createElement(fiber.type)
 
-// ---- Teste (Missão 1) ----
-const element = Didact.createElement(
-  "div",
-  { style: "background: salmon; padding: 20px; border-radius: 8px;" },
-  Didact.createElement("h1", null, "Missão 1: Sucesso! 🎉"),
-  Didact.createElement("p", null, "Se você está vendo isso, a criação do DOM está funcionando.")
-)
+  updateDom(dom, {}, fiber.props)
+  return dom
+}
 
-const container = document.getElementById("root")
-Didact.render(element, container)
+// ---- Missão 2: Estado global ----
+
+let nextUnitOfWork = null 
+let wipRoot = null        
+
+// ---- Missão 2: Work Loop  ----
+
+function workLoop(deadline) {
+  let shouldYield = false
+  while (nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
+    shouldYield = deadline.timeRemaining() < 1 
+  }
+
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot()
+  }
+
+  requestIdleCallback(workLoop)
+}
+
+requestIdleCallback(workLoop)
+
+function commitRoot() {}
+function reconcileChildren(wipFiber, elements) {}
+
+// ---- Missão 2: Funções de atualização de componente ----
+
+function updateHostComponent(fiber) {
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber) 
+  }
+  reconcileChildren(fiber, fiber.props.children)
+}
+
+function updateFunctionComponent(fiber) {
+  const children = [fiber.type(fiber.props)] 
+  reconcileChildren(fiber, children)
+}
+
+// ---- Missão 2: performUnitOfWork ----
+
+function performUnitOfWork(fiber) {
+  const isFunctionComponent = fiber.type instanceof Function
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
+  }
+
+  if (fiber.child) {
+    return fiber.child
+  }
+
+  let nextFiber = fiber
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling 
+    }
+    nextFiber = nextFiber.parent 
+  }
+
+  return undefined
+}
+
+// ---- Teste: Travessia de Fibras (Missão 2) ----
+/* Árvore simulada:
+      A
+     / \
+    B   D
+   /
+  C
+*/
+const fiberC = { type: "C", props: { children: [] } }
+const fiberB = { type: "B", props: { children: [] }, child: fiberC }
+const fiberD = { type: "D", props: { children: [] } }
+const fiberA = { type: "A", props: { children: [] }, child: fiberB }
+
+fiberC.parent = fiberB
+fiberB.parent = fiberA
+fiberD.parent = fiberA
+fiberB.sibling = fiberD
+
+// Substitui temporariamente updateHostComponent para não tocar no DOM
+const _originalUpdateHost = updateHostComponent
+updateHostComponent = (fiber) => { console.log("Visitando nó:", fiber.type) }
+
+console.log("--- Iniciando Teste de Travessia de Fibras ---")
+let nextUnit = fiberA
+while (nextUnit) {
+  nextUnit = performUnitOfWork(nextUnit)
+}
+console.log("--- Travessia Concluída (esperado: A, B, C, D) ---")
+
+updateHostComponent = _originalUpdateHost
