@@ -1,0 +1,58 @@
+// ============================================================
+// DIDACT — Missão 1: createElement e render
+// ============================================================
+
+function createElement(type, props, ...children) {
+  return {
+    type,
+    props: {
+      ...props,
+      children: children.map(child =>
+        typeof child === "object"
+          ? child
+          : createTextElement(child)
+      ),
+    },
+  }
+}
+
+function createTextElement(text) {
+  return {
+    type: "TEXT_ELEMENT",
+    props: {
+      nodeValue: text,    
+      children: [],       
+    },
+  }
+}
+
+function render(element, container) {
+  const dom =
+    element.type === "TEXT_ELEMENT"
+      ? document.createTextNode("")
+      : document.createElement(element.type)
+
+  Object.keys(element.props)
+    .filter(key => key !== "children")
+    .forEach(name => {
+      dom[name] = element.props[name]
+    })
+
+  element.props.children.forEach(child => render(child, dom))
+
+  container.appendChild(dom)
+}
+
+// ---- API pública ----
+const Didact = { createElement, render }
+
+// ---- Teste (Missão 1) ----
+const element = Didact.createElement(
+  "div",
+  { style: "background: salmon; padding: 20px; border-radius: 8px;" },
+  Didact.createElement("h1", null, "Missão 1: Sucesso! 🎉"),
+  Didact.createElement("p", null, "Se você está vendo isso, a criação do DOM está funcionando.")
+)
+
+const container = document.getElementById("root")
+Didact.render(element, container)
