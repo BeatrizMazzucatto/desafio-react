@@ -180,7 +180,22 @@ main
 
 ## 👥 Autores
 
-Desenvolvido como desafio da disciplina de **Desenvolvimento Mobile**.
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/BeatrizMazzucatto">
+        <img src="https://github.com/BeatrizMazzucatto.png" width="100px;" alt="Beatriz Mazzucatto"/><br>
+        <sub><b>Beatriz Mazzucatto</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/juliagarciac">
+        <img src="https://github.com/juliagarciac.png" width="100px;" alt="Julia Garcia"/><br>
+        <sub><b>Julia Garcia</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ---
 
