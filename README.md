@@ -199,12 +199,4 @@ main
 
 ---
 
-## 🙏 Agradecimentos
-
-- 💚 Rodrigo Pombo pelo artigo original *"Build your own React"*
-- 📚 Giovani Disperati pelo material da disciplina
-- 🌟 Comunidade open source
-
----
-
 *Última atualização: Abril 2026*
